@@ -133,6 +133,19 @@ class ContextMenuFactoryTest {
     }
 
     @Test
+    void ocrIsDisabledForBrokenLinkedFile() {
+        LinkedFileViewModel brokenFileViewModel = mockOfflineBrokenFileViewModel();
+
+        ContextMenu contextMenu = factory.createMenuForSelection(FXCollections.observableArrayList(brokenFileViewModel));
+
+        MenuItem performOcr = contextMenu.getItems().stream()
+                                         .filter(menuItem -> Localization.lang("Perform OCR").equals(menuItem.getText()))
+                                         .findFirst()
+                                         .orElseThrow();
+        assertTrue(performOcr.isDisable());
+    }
+
+    @Test
     void createMenuForOfflineAndOnlineFilesMixed() {
         LinkedFileViewModel offlineExistingFileViewModel = mockOfflineExistingFileViewModel(
                 bibDatabaseContext, filePreferences, "https://example.com/file.pdf"
@@ -185,6 +198,21 @@ class ContextMenuFactoryTest {
         when(modelLinkedFile.linkProperty()).thenReturn(new SimpleStringProperty("https://host/file2.pdf"));
         when(modelLinkedFile.getSourceUrl()).thenReturn("https://host/file2.pdf");
         when(modelLinkedFile.sourceUrlProperty()).thenReturn(new SimpleStringProperty("https://host/file2.pdf"));
+
+        LinkedFileViewModel fileViewModel = mock(LinkedFileViewModel.class, Answers.RETURNS_DEEP_STUBS);
+        when(fileViewModel.getFile()).thenReturn(modelLinkedFile);
+        when(fileViewModel.isGeneratedPathSameAsOriginal()).thenReturn(false);
+        when(fileViewModel.isGeneratedNameSameAsOriginal()).thenReturn(false);
+        return fileViewModel;
+    }
+
+    private static LinkedFileViewModel mockOfflineBrokenFileViewModel() {
+        LinkedFile modelLinkedFile = mock(LinkedFile.class, Answers.RETURNS_DEEP_STUBS);
+        when(modelLinkedFile.isOnlineLink()).thenReturn(false);
+        when(modelLinkedFile.findIn(any(), any())).thenReturn(Optional.empty());
+        when(modelLinkedFile.linkProperty()).thenReturn(new SimpleStringProperty("missing.pdf"));
+        when(modelLinkedFile.getSourceUrl()).thenReturn("");
+        when(modelLinkedFile.sourceUrlProperty()).thenReturn(new SimpleStringProperty(""));
 
         LinkedFileViewModel fileViewModel = mock(LinkedFileViewModel.class, Answers.RETURNS_DEEP_STUBS);
         when(fileViewModel.getFile()).thenReturn(modelLinkedFile);
